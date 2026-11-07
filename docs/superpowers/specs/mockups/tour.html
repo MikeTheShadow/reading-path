@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reading path mockup</title>
+<style>
+  :root {
+    --bg: #fbfaf7; --surface: #fff; --text: #1b1d21; --muted: #555b65; --border: #d9dbe0;
+    --accent: #b2361f; --accent-text: #9c2c18;
+    --glow-a: #ff5fa2; --glow-b: #7c5cff; --glow-c: #23d5e8;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14161a; --surface: #1b1e23; --text: #e9e7e2; --muted: #a9adb5; --border: #353a42; --accent: #ff8a70; --accent-text: #ff9a83; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.6; }
+  .chrome { max-width: 72rem; margin: 0 auto; padding: 1rem; }
+  .chrome h2 { margin: .25rem 0; }
+  .chrome .sub { color: var(--muted); margin: 0 0 1rem; }
+  .modes { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+  .modes button { font: inherit; padding: .5rem .9rem; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
+  .modes button[aria-pressed="true"] { border-color: var(--glow-b); box-shadow: 0 0 0 2px var(--glow-b); }
+  .modes .letter { font-weight: 700; margin-right: .35rem; }
+
+  /* Mini replica of the home page */
+  .stage { position: relative; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); overflow: hidden; }
+  .site-header { border-bottom: 1px solid var(--border); }
+  .inner { padding: 1rem 1.5rem; }
+  .header-inner { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  .site-name { font-weight: 700; color: var(--text); text-decoration: none; }
+  .nav { display: flex; gap: 1.2rem; list-style: none; margin: 0; padding: 0; }
+  .nav a, a { color: var(--accent-text); }
+  h1 { width: fit-content; font-size: 2.4rem; margin: .5rem 0 .25rem; letter-spacing: -.02em; }
+  h3.page-h2 { width: fit-content; font-size: 1.5rem; margin: 1.5rem 0 .75rem; }
+  .meta { color: var(--muted); margin: 0 0 .5rem; width: fit-content; }
+  .lead { font-size: 1.15rem; max-width: 40rem; margin: 0 0 1rem; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1rem; list-style: none; padding: 0; margin: 0; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; }
+  .card h4 { margin: 0 0 .4rem; font-size: 1.1rem; width: fit-content; }
+  .card p { margin: 0; color: var(--muted); font-size: .95rem; }
+  .tour-btn { font: inherit; font-size: .9rem; border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: .35rem .8rem; border-radius: 999px; cursor: pointer; }
+  .tour-btn::before { content: "◉ "; color: var(--glow-b); }
+
+  /* The tour layer */
+  .trace { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+  .stop-on { position: relative; border-radius: 6px; outline: 2px solid var(--glow-b); outline-offset: 3px;
+    box-shadow: 0 0 8px 1px color-mix(in srgb, var(--glow-b) 30%, transparent);
+    transition: box-shadow .3s, outline-color .3s; }
+  .stop-done { outline: 1px dashed color-mix(in srgb, var(--glow-b) 55%, transparent); outline-offset: 2px; border-radius: 6px; }
+  .w { border-radius: 4px; transition: background .2s, box-shadow .2s; }
+  .w.on { background: color-mix(in srgb, var(--glow-c) 30%, transparent); box-shadow: 0 0 10px 2px color-mix(in srgb, var(--glow-a) 60%, transparent); }
+  .badge { position: absolute; font: 700 11px var(--sans); color: #fff; background: var(--glow-b); border-radius: 999px; min-width: 18px; height: 18px; display: grid; place-items: center; padding: 0 5px; box-shadow: 0 0 8px var(--glow-a); }
+
+  .caption { margin-top: .75rem; min-height: 3.2rem; padding: .7rem 1rem; border-radius: 10px; background: #111318; color: #e9e7e2; font: 1rem ui-monospace, Menlo, Consolas, monospace; display: flex; gap: .75rem; align-items: center; }
+  .caption .who { color: #23d5e8; white-space: nowrap; }
+  .controls { display: flex; gap: .5rem; margin-top: .5rem; flex-wrap: wrap; }
+  .controls button { font: inherit; font-size: .9rem; padding: .3rem .8rem; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
+  .note { color: var(--muted); font-size: .9rem; margin-top: 1rem; }
+</style>
+</head>
+<body>
+<div class="chrome">
+  <h2>Continuous glowing line, trail stays</h2>
+  <p class="sub">Press <strong>◉ Reading path</strong> in the mock header (or Play below). No white tip: the coloured line itself just grows, glowing evenly, and stays behind.</p>
+
+  <div class="modes" role="group" aria-label="Trace style">
+
+  </div>
+
+  <div class="stage" id="stage">
+    <svg class="trace" id="trace" aria-hidden="true">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ff5fa2"/><stop offset=".5" stop-color="#7c5cff"/><stop offset="1" stop-color="#23d5e8"/>
+        </linearGradient>
+        <filter id="blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+      </defs>
+      <path id="halo" fill="none" stroke="url(#g)" stroke-width="9" stroke-linecap="round" opacity=".45" filter="url(#blur)"/>
+      <path id="line" fill="none" stroke="url(#g)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <path id="beam" fill="none" stroke="none"/>
+      <circle id="dot" r="5" fill="#fff" opacity="0" style="filter: drop-shadow(0 0 6px #23d5e8) drop-shadow(0 0 10px #7c5cff)"/>
+    </svg>
+
+    <header class="site-header">
+      <div class="inner header-inner">
+        <a href="#" class="site-name" data-say="Link, Michael Pape">Michael Pape</a>
+        <ul class="nav">
+          <li><a href="#" data-say="Navigation landmark, Primary. List, 4 items. Link, Work">Work</a></li>
+          <li><a href="#" data-say="Link, Blog">Blog</a></li>
+          <li><a href="#" data-say="Link, How it runs">How it runs</a></li>
+          <li><a href="#" data-say="Link, Contact">Contact</a></li>
+        </ul>
+        <button class="tour-btn" id="tourBtn" onclick="play()" data-say="Button, Reading path">Reading path</button>
+      </div>
+    </header>
+    <div class="inner">
+      <h1 data-say="Main landmark. Heading level 1, Michael Pape">Michael Pape</h1>
+      <p class="meta" data-say="Software developer · London, Ontario">Software developer · London, Ontario</p>
+      <p class="lead words" data-say="I build web applications and the systems that run them, with the people using them in mind.">I build web applications and the systems that run them, with the people using them in mind.</p>
+      <h3 class="page-h2" data-say="Work region. Heading level 2, Work">Work</h3>
+      <ul class="cards">
+        <li class="card"><h4 data-say="List, 3 items. Heading level 3, link, Moonwhales"><a href="#">Moonwhales</a></h4><p data-say="Rust web application turning blockchain data into Discord bot nicknames.">Rust web application turning blockchain data into Discord bot nicknames.</p></li>
+        <li class="card"><h4 data-say="Heading level 3, link, Voluminous Energy"><a href="#">Voluminous Energy</a></h4><p data-say="Java mod: many machine classes moved onto one shared foundation.">Java mod: many machine classes moved onto one shared foundation.</p></li>
+        <li class="card"><h4 data-say="Heading level 3, link, This portfolio"><a href="#">This portfolio</a></h4><p data-say="Next.js and PostgreSQL on a Raspberry Pi 3. Out of list.">Next.js and PostgreSQL on a Raspberry Pi 3.</p></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="caption" aria-live="polite"><span class="who">Screen reader says:</span><span id="say">Press “Reading path” to start the tour.</span></div>
+  <div class="controls">
+    <button onclick="play()">▶ Play</button>
+    <button onclick="stop()">■ Stop</button>
+  </div>
+  <p class="note">Mockup only. Speech text is approximate (NVDA-style). In the real build the stops come from the page's actual reading order, not a hand-made list.</p>
+</div>
+
+<script>
+const SPEED = 230; // pixels per second
+let tail = 'keep', run = 0;
+const stage = document.getElementById('stage');
+const line = document.getElementById('line'), halo = document.getElementById('halo'), beam = document.getElementById('beam'), dot = document.getElementById('dot');
+const sayEl = document.getElementById('say');
+
+function pick(btn) {
+  document.querySelectorAll('.modes button').forEach(b => b.setAttribute('aria-pressed', b === btn));
+  tail = btn.dataset.tail;
+  play();
+}
+function stops() { return [...stage.querySelectorAll('[data-say]')].filter(el => !el.classList.contains('nav')); }
+function centre(el) {
+  const s = stage.getBoundingClientRect(), r = el.getBoundingClientRect();
+  // Enter each item at its left edge, mid-height: where reading starts.
+  return { x: r.left - s.left - 3, y: r.top - s.top + r.height / 2 };
+}
+function clear() {
+  stage.querySelectorAll('.stop-on,.stop-done').forEach(e => e.classList.remove('stop-on', 'stop-done'));
+  [line, halo, beam].forEach(p => { p.setAttribute('d', ''); p.style.strokeDasharray = ''; p.style.strokeDashoffset = ''; });
+  dot.setAttribute('opacity', 0);
+}
+function stop() { run++; clear(); sayEl.textContent = 'Stopped.'; }
+
+function play() {
+  run++; clear(); const my = run;
+  const list = stops(), pts = list.map(centre);
+  const probe = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  document.getElementById('trace').appendChild(probe);
+  let d = `M ${pts[0].x} ${pts[0].y}`; const lens = [0];
+  for (let i = 1; i < pts.length; i++) { d += ` L ${pts[i].x} ${pts[i].y}`; probe.setAttribute('d', d); lens.push(probe.getTotalLength()); }
+  probe.remove();
+  [line, halo, beam].forEach(p => { p.style.strokeDasharray = '0 99999'; p.setAttribute('d', d); });
+  const total = lens[lens.length - 1];
+  dot.setAttribute('opacity', 0);
+  let current = -1;
+  const t0 = performance.now();
+  function frame(t) {
+    if (my !== run) return;
+    const len = Math.min(total, (t - t0) / 1000 * SPEED);
+    const TAIL = 140;
+    if (tail === 'keep') {
+      line.style.strokeDasharray = `${len} 99999`; halo.style.strokeDasharray = `${len} 99999`;
+    } else {
+      const start = Math.max(0, len - TAIL);
+      [line, halo].forEach(p => { p.style.strokeDasharray = `0 ${start} ${len - start} 99999`; });
+      line.style.opacity = 1;
+    }
+    const b = Math.min(len, 36);
+    beam.style.strokeDasharray = `0 ${len - b} ${b} 99999`;
+    const pt = line.getPointAtLength(len); dot.setAttribute('cx', pt.x); dot.setAttribute('cy', pt.y);
+    // Light up whichever item the head has most recently reached.
+    let idx = 0; while (idx + 1 < lens.length && lens[idx + 1] <= len + 0.5) idx++;
+    if (idx !== current) {
+      if (current >= 0) { list[current].classList.remove('stop-on'); if (tail === 'keep') list[current].classList.add('stop-done'); }
+      current = idx; list[idx].classList.add('stop-on'); sayEl.textContent = list[idx].dataset.say;
+    }
+    if (len < total) requestAnimationFrame(frame);
+    else setTimeout(() => { if (my !== run) return; list[current].classList.remove('stop-on'); if (tail === 'keep') list[current].classList.add('stop-done'); dot.setAttribute('opacity', 0); beam.style.strokeDasharray = '0 99999'; if (tail === 'fade') [line, halo].forEach(p => p.style.strokeDasharray = '0 99999'); sayEl.textContent = 'End of page.'; }, 700);
+  }
+  requestAnimationFrame(frame);
+}
+</script>
+</body>
+</html>

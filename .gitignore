@@ -1,0 +1,7 @@
+node_modules/
+dist/
+test-results/
+playwright-report/
+.vitest-attachments/
+__screenshots__/
+.superpowers/

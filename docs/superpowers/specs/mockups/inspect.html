@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inspect mode mockup</title>
+<style>
+  :root {
+    --bg: #fbfaf7; --surface: #fff; --text: #1b1d21; --muted: #555b65; --border: #d9dbe0;
+    --link: #1d5bd8; --warn: #c27a00; --warn-bg: #fff4dc; --sel: #7c5cff;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14161a; --surface: #1b1e23; --text: #e9e7e2; --muted: #a9adb5; --border: #353a42; --link: #8ab4ff; --warn: #ffb547; --warn-bg: #3a2c12; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.5; }
+  .chrome { max-width: 80rem; margin: 0 auto; padding: 1rem; }
+  .chrome h2 { margin: .25rem 0; }
+  .sub { color: var(--muted); margin: 0 0 1rem; max-width: 60rem; }
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 24rem; gap: 1rem; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  /* Sample page with deliberate problems */
+  .stage { position: relative; border: 1px solid var(--border); border-radius: 12px; background: #fff; color: #222; overflow: hidden; }
+  .stage a { color: #1d5bd8; }
+  .s-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .8rem 1.2rem; border-bottom: 1px solid #ddd; }
+  .s-logo { font-weight: 800; color: #222 !important; text-decoration: none; }
+  .s-nav { display: flex; gap: 1rem; list-style: none; margin: 0; padding: 0; }
+  .icon-btn { border: 1px solid #ccc; background: #f6f6f6; border-radius: 8px; width: 2.2rem; height: 2.2rem; font-size: 1rem; }
+  .s-main { padding: 1rem 1.2rem 1.4rem; }
+  .s-main h1 { font-size: 2rem; margin: .2rem 0 .4rem; width: fit-content; }
+  .s-main h3 { font-size: 1.3rem; margin: .8rem 0 .3rem; width: fit-content; }
+  .s-main p { margin: 0 0 .6rem; width: fit-content; max-width: 34rem; }
+  .hero { width: 15rem; height: 6rem; border-radius: 8px; background: linear-gradient(135deg, #f0c27b, #4b1248); margin: .4rem 0 .8rem; }
+  .row { display: flex; flex-direction: row-reverse; justify-content: flex-end; gap: 1rem; }
+  .tile { border: 1px solid #ddd; border-radius: 8px; padding: .6rem .8rem; width: 12rem; }
+  .tile strong { display: block; width: fit-content; }
+
+  .trace { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+  .badge { position: absolute; font: 700 11px var(--sans); color: #fff; background: var(--sel); border-radius: 999px; min-width: 18px; height: 18px; display: grid; place-items: center; padding: 0 5px; transform: translate(-50%, -50%); pointer-events: none; }
+  .badge.warn { background: var(--warn); }
+  .hl { outline: 2px solid var(--sel); outline-offset: 3px; border-radius: 4px; box-shadow: 0 0 8px 1px color-mix(in srgb, var(--sel) 30%, transparent); }
+  .hl-warn { outline: 2px dashed var(--warn); outline-offset: 3px; border-radius: 4px; }
+
+  /* Panel */
+  .panel { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); overflow: hidden; }
+  .tabs { display: flex; border-bottom: 1px solid var(--border); }
+  .tabs span { flex: 1; text-align: center; padding: .6rem; font-weight: 600; color: var(--muted); }
+  .tabs .on { color: var(--text); box-shadow: inset 0 -3px 0 var(--sel); }
+  .summary { padding: .6rem .9rem; font-size: .9rem; color: var(--muted); border-bottom: 1px solid var(--border); display: flex; gap: 1rem; flex-wrap: wrap; }
+  .summary b { color: var(--text); }
+  .summary .w { color: var(--warn); }
+  .filter { padding: .5rem .9rem; border-bottom: 1px solid var(--border); font-size: .85rem; display: flex; gap: .4rem; }
+  .filter span { border: 1px solid var(--border); border-radius: 999px; padding: .1rem .6rem; }
+  .filter .on { border-color: var(--sel); }
+  ol.stops { list-style: none; margin: 0; padding: 0; max-height: 34rem; overflow: auto; }
+  .stops li { padding: .55rem .9rem; border-bottom: 1px solid var(--border); cursor: pointer; display: grid; grid-template-columns: 1.6rem 1fr; gap: .4rem; }
+  .stops li:hover, .stops li.cur { background: color-mix(in srgb, var(--sel) 10%, transparent); }
+  .num { font: 700 .8rem var(--mono); color: var(--sel); padding-top: .1rem; }
+  .say { font: .85rem var(--mono); }
+  .issue { margin-top: .35rem; padding: .4rem .55rem; border-radius: 6px; background: var(--warn-bg); font-size: .85rem; }
+  .issue .t { color: var(--warn); font-weight: 700; }
+  .issue .fix { margin-top: .2rem; }
+  .issue code { font: .8rem var(--mono); }
+  .note { color: var(--muted); font-size: .9rem; margin-top: 1rem; }
+</style>
+</head>
+<body>
+<div class="chrome">
+  <h2>Inspect mode: instant trace, warnings with fixes</h2>
+  <p class="sub">A made-up shop page with five deliberate problems. The whole route appears at once with numbered stops; amber stops have a warning. Hover or click an entry in the panel to highlight that piece on the page. (Tour mode is the animated version you already approved.)</p>
+
+  <div class="layout">
+    <div class="stage" id="stage">
+      <svg class="trace" id="trace" aria-hidden="true">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ff5fa2"/><stop offset=".5" stop-color="#7c5cff"/><stop offset="1" stop-color="#23d5e8"/>
+          </linearGradient>
+          <filter id="blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+        </defs>
+        <path id="halo" fill="none" stroke="url(#g)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity=".4" filter="url(#blur)"/>
+        <path id="line" fill="none" stroke="url(#g)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <header class="s-head">
+        <a href="#" class="s-logo" data-stop>Acme Hardware</a>
+        <ul class="s-nav">
+          <li><a href="#" data-stop>Shop</a></li>
+          <li><a href="#" data-stop>Contact</a></li>
+        </ul>
+        <button class="icon-btn" data-stop>🔍</button>
+      </header>
+      <div class="s-main">
+        <h1 data-stop>Spring sale</h1>
+        <h3 data-stop>This week only</h3>
+        <p data-stop>Save on every garden tool in the store.</p>
+        <div class="hero" data-stop></div>
+        <p data-stop>See the full list? <a href="#">Click here</a>.</p>
+        <div class="row">
+          <div class="tile" data-stop-wrap><strong data-stop>Second: Hoses</strong></div>
+          <div class="tile" data-stop-wrap><strong data-stop>First: Shovels</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="panel" aria-label="Reading path inspector">
+      <div class="tabs"><span>Tour</span><span class="on">Inspect</span></div>
+      <div class="summary"><span><b>11</b> stops</span><span class="w"><b>5</b> warnings</span><span>Approximate speech, NVDA-style</span></div>
+      <div class="filter"><span class="on">All stops</span><span>Warnings only</span></div>
+      <ol class="stops" id="stops"></ol>
+    </aside>
+  </div>
+  <p class="note">Mockup only: stops, speech and warnings here are hand-written. The real extension works them out from the page.</p>
+</div>
+
+<script>
+const data = [
+  { say: "Banner landmark. Link, Acme Hardware" },
+  { say: "List, 2 items. Link, Shop" },
+  { say: "Link, Contact. Out of list." },
+  { say: "Button", issue: ["Button has no name", "A screen reader says only “button”. The 🔍 emoji isn't a usable label.", 'Add <code>aria-label="Search"</code>, or visible text.'] },
+  { say: "Heading level 1, Spring sale" },
+  { say: "Heading level 3, This week only", issue: ["Heading level skipped", "Goes from level 1 to level 3. People browsing by heading will think something is missing.", "Use an <code>&lt;h2&gt;</code> here, and style it to look however you like."] },
+  { say: "Save on every garden tool in the store." },
+  { say: "(nothing read)", issue: ["Image content with no text", "This picture is a background image, so screen readers skip it entirely.", 'If it carries meaning, use <code>&lt;img alt=\"…\"&gt;</code> or add <code>role="img"</code> with an <code>aria-label</code>.'] },
+  { say: "See the full list? Link, Click here.", issue: ["Link text doesn't say where it goes", "Listed on its own (a common screen-reader shortcut), it's just “Click here”.", "Make the link text describe the target, e.g. “See the full garden tool list”."] },
+  { say: "Second: Hoses", issue: ["Read in a different order than shown", "This appears second on screen but is read first. The layout uses <code>flex-direction: row-reverse</code>.", "Put the elements in the HTML in the order they should be read, and drop the reversal."] },
+  { say: "First: Shovels" },
+];
+const stage = document.getElementById('stage');
+const els = [...stage.querySelectorAll('[data-stop]')];
+const list = document.getElementById('stops');
+
+function pt(el) {
+  const s = stage.getBoundingClientRect(), r = el.getBoundingClientRect();
+  return { x: r.left - s.left - 3, y: r.top - s.top + r.height / 2 };
+}
+function draw() {
+  stage.querySelectorAll('.badge').forEach(b => b.remove());
+  const pts = els.map(pt);
+  const d = pts.map((p, i) => (i ? 'L' : 'M') + ' ' + p.x + ' ' + p.y).join(' ');
+  document.getElementById('line').setAttribute('d', d);
+  document.getElementById('halo').setAttribute('d', d);
+  pts.forEach((p, i) => {
+    const b = document.createElement('span');
+    b.className = 'badge' + (data[i].issue ? ' warn' : '');
+    b.textContent = data[i].issue ? '⚠' : i + 1;
+    b.style.left = p.x + 'px'; b.style.top = p.y + 'px';
+    stage.appendChild(b);
+  });
+}
+data.forEach((d, i) => {
+  const li = document.createElement('li');
+  li.innerHTML = `<span class="num">${i + 1}</span><div><div class="say">${d.say}</div>` +
+    (d.issue ? `<div class="issue"><div class="t">⚠ ${d.issue[0]}</div><div>${d.issue[1]}</div><div class="fix"><b>Fix:</b> ${d.issue[2]}</div></div>` : '') + `</div>`;
+  const on = () => {
+    els.forEach(e => e.classList.remove('hl', 'hl-warn'));
+    list.querySelectorAll('li').forEach(x => x.classList.remove('cur'));
+    els[i].classList.add(d.issue ? 'hl-warn' : 'hl'); li.classList.add('cur');
+  };
+  li.addEventListener('mouseenter', on); li.addEventListener('click', on);
+  list.appendChild(li);
+});
+draw();
+addEventListener('resize', draw);
+</script>
+</body>
+</html>

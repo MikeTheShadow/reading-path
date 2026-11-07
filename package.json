@@ -1,0 +1,38 @@
+{
+  "name": "reading-path",
+  "version": "0.1.0",
+  "private": true,
+  "description": "See how a screen reader will read your web page",
+  "license": "GPL-3.0-or-later",
+  "author": "Michael Pape",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "dom-accessibility-api": "0.7.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.65.0",
+    "@vitest/browser-playwright": "5.1.0",
+    "esbuild": "0.28.2",
+    "eslint": "10.14.0",
+    "playwright": "1.65.0",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vitest": "5.1.0"
+  },
+  "allowScripts": {
+    "esbuild": false
+  }
+}
